@@ -2,7 +2,7 @@
   "name": "polysights-dashboard",
   "version": "1.0.0",
   "description": "Polysights Insider Trading Dashboard - Copy Trading Intelligence",
-  "main": "server/index.js",
+  "main": "api/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
@@ -10,11 +10,16 @@
     "fetch-data": "node server/scripts/fetch-data.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^11.0.0",
     "dotenv": "^16.4.0",
-    "express": "^4.18.2",
     "socket.io": "^4.7.4",
     "node-cron": "^3.0.3"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
