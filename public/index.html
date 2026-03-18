@@ -748,6 +748,66 @@
         gap: 8px;
       }
     }
+
+    /* Column Filter Styles */
+    .filter-row {
+      background: var(--bg-secondary) !important;
+    }
+
+    .filter-row th {
+      padding: 8px 6px !important;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-input {
+      width: 100%;
+      padding: 6px 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .filter-input-small {
+      width: 48%;
+      padding: 4px 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-primary);
+      font-size: 11px;
+      font-family: inherit;
+      margin: 1px;
+    }
+
+    .filter-input:focus, .filter-input-small:focus {
+      outline: none;
+      border-color: var(--blue);
+      background: var(--bg-primary);
+    }
+
+    .filter-input::placeholder, .filter-input-small::placeholder {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    /* Clear filters button */
+    .clear-filters {
+      background: var(--red);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .clear-filters:hover {
+      background: var(--red-dim);
+    }
   </style>
 </head>
 <body>
@@ -815,7 +875,10 @@
         <div class="table-container">
           <div class="table-header">
             <div class="table-title">🏆 Top Trader Performance</div>
-            <span style="font-size:12px; color:var(--text-muted)">Ranked by profitability score</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size:12px; color:var(--text-muted)">Ranked by profitability score</span>
+              <button class="clear-filters" onclick="clearFilters()">🗑️ Clear Filters</button>
+            </div>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -831,6 +894,47 @@
                   <th class="hide-mobile">Win Rate</th>
                   <th class="hide-mobile">Positions</th>
                   <th>Trend</th>
+                </tr>
+                <tr class="filter-row">
+                  <th></th>
+                  <th><input type="text" id="filterTraderName" placeholder="Search..." class="filter-input" onkeyup="filterTraders()"></th>
+                  <th>
+                    <input type="number" id="filterScoreMin" placeholder="Min" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterScoreMax" placeholder="Max" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th>
+                    <input type="number" id="filterPnlMin" placeholder="Min $" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterPnlMax" placeholder="Max $" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th>
+                    <input type="number" id="filterVolumeMin" placeholder="Min" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterVolumeMax" placeholder="Max" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th>
+                    <input type="number" id="filterTradesMin" placeholder="Min" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterTradesMax" placeholder="Max" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th>
+                    <input type="number" id="filterAvgMin" placeholder="Min $" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterAvgMax" placeholder="Max $" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th class="hide-mobile">
+                    <input type="number" id="filterWinRateMin" placeholder="Min %" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterWinRateMax" placeholder="Max %" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th class="hide-mobile">
+                    <input type="number" id="filterPositionsMin" placeholder="Min" class="filter-input-small" onchange="filterTraders()">
+                    <input type="number" id="filterPositionsMax" placeholder="Max" class="filter-input-small" onchange="filterTraders()">
+                  </th>
+                  <th>
+                    <select id="filterTrend" class="filter-input" onchange="filterTraders()">
+                      <option value="">All</option>
+                      <option value="hot">🔥 Hot</option>
+                      <option value="warm">⭐ Warm</option>
+                      <option value="cold">❄️ Cold</option>
+                      <option value="neutral">— Neutral</option>
+                    </select>
+                  </th>
                 </tr>
               </thead>
               <tbody id="tradersTable">
@@ -904,6 +1008,7 @@
   <script>
     // State
     let traders = [];
+    let allTraders = []; // Store original unfiltered data
     let opportunities = [];
     let allOpportunities = [];
     let markets = [];
@@ -966,6 +1071,7 @@
 
         const stats = await statsRes.json();
         traders = await tradersRes.json();
+        allTraders = [...traders]; // Store original unfiltered data
         allOpportunities = await oppsRes.json();
         opportunities = [...allOpportunities];
         markets = await marketsRes.json();
@@ -1072,6 +1178,87 @@
           </td>
         </tr>`;
       }).join('');
+    }
+
+    // Filter traders based on column filters
+    function filterTraders() {
+      if (!allTraders || allTraders.length === 0) return;
+      
+      const filters = {
+        name: document.getElementById('filterTraderName')?.value.toLowerCase() || '',
+        scoreMin: parseFloat(document.getElementById('filterScoreMin')?.value) || 0,
+        scoreMax: parseFloat(document.getElementById('filterScoreMax')?.value) || 100,
+        pnlMin: parseFloat(document.getElementById('filterPnlMin')?.value) || -Infinity,
+        pnlMax: parseFloat(document.getElementById('filterPnlMax')?.value) || Infinity,
+        volumeMin: parseFloat(document.getElementById('filterVolumeMin')?.value) || 0,
+        volumeMax: parseFloat(document.getElementById('filterVolumeMax')?.value) || Infinity,
+        tradesMin: parseFloat(document.getElementById('filterTradesMin')?.value) || 0,
+        tradesMax: parseFloat(document.getElementById('filterTradesMax')?.value) || Infinity,
+        avgMin: parseFloat(document.getElementById('filterAvgMin')?.value) || -Infinity,
+        avgMax: parseFloat(document.getElementById('filterAvgMax')?.value) || Infinity,
+        winRateMin: parseFloat(document.getElementById('filterWinRateMin')?.value) || 0,
+        winRateMax: parseFloat(document.getElementById('filterWinRateMax')?.value) || 100,
+        positionsMin: parseFloat(document.getElementById('filterPositionsMin')?.value) || 0,
+        positionsMax: parseFloat(document.getElementById('filterPositionsMax')?.value) || Infinity,
+        trend: document.getElementById('filterTrend')?.value || ''
+      };
+      
+      traders = allTraders.filter(trader => {
+        // Name filter
+        if (filters.name && !trader.pseudonym.toLowerCase().includes(filters.name)) return false;
+        
+        // Score filter
+        if (trader.score < filters.scoreMin || trader.score > filters.scoreMax) return false;
+        
+        // P&L filter
+        if (trader.total_pnl < filters.pnlMin || trader.total_pnl > filters.pnlMax) return false;
+        
+        // Volume filter
+        if (trader.total_volume < filters.volumeMin || trader.total_volume > filters.volumeMax) return false;
+        
+        // Trades filter
+        if (trader.total_trades < filters.tradesMin || trader.total_trades > filters.tradesMax) return false;
+        
+        // Avg profit filter
+        if (trader.avg_profit_per_trade < filters.avgMin || trader.avg_profit_per_trade > filters.avgMax) return false;
+        
+        // Win rate filter (convert to percentage for comparison)
+        const winRatePercent = (trader.win_rate || 0) * 100;
+        if (winRatePercent < filters.winRateMin || winRatePercent > filters.winRateMax) return false;
+        
+        // Positions filter
+        if (trader.active_positions < filters.positionsMin || trader.active_positions > filters.positionsMax) return false;
+        
+        // Trend filter
+        if (filters.trend && trader.trend !== filters.trend) return false;
+        
+        return true;
+      });
+      
+      renderTraders();
+    }
+
+    // Clear all filters
+    function clearFilters() {
+      document.getElementById('filterTraderName').value = '';
+      document.getElementById('filterScoreMin').value = '';
+      document.getElementById('filterScoreMax').value = '';
+      document.getElementById('filterPnlMin').value = '';
+      document.getElementById('filterPnlMax').value = '';
+      document.getElementById('filterVolumeMin').value = '';
+      document.getElementById('filterVolumeMax').value = '';
+      document.getElementById('filterTradesMin').value = '';
+      document.getElementById('filterTradesMax').value = '';
+      document.getElementById('filterAvgMin').value = '';
+      document.getElementById('filterAvgMax').value = '';
+      document.getElementById('filterWinRateMin').value = '';
+      document.getElementById('filterWinRateMax').value = '';
+      document.getElementById('filterPositionsMin').value = '';
+      document.getElementById('filterPositionsMax').value = '';
+      document.getElementById('filterTrend').value = '';
+      
+      traders = [...allTraders]; // Reset to original data
+      renderTraders();
     }
 
     // Render opportunities
