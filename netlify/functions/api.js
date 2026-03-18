@@ -277,6 +277,71 @@ function generateMarkets(traders) {
     .slice(0, 30);
 }
 
+// Generate mock latest trades data
+function generateLatestTrades(allTraders, limit = 50) {
+  if (!allTraders || allTraders.length === 0) return [];
+  
+  const trades = [];
+  const actions = ['buy', 'sell', 'open', 'close'];
+  const outcomes = ['Yes', 'No'];
+  const sides = ['Long', 'Short'];
+  
+  // Base time - start from now and go backwards
+  let currentTime = new Date();
+  
+  for (let i = 0; i < limit; i++) {
+    const trader = allTraders[Math.floor(Math.random() * Math.min(allTraders.length, 10))]; // Focus on top 10 traders
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+    const side = sides[Math.floor(Math.random() * sides.length)];
+    
+    // Generate realistic trade times (random intervals between 1 min and 6 hours ago)
+    const minutesAgo = Math.floor(Math.random() * 360) + 1;
+    const tradeTime = new Date(currentTime.getTime() - (minutesAgo * 60 * 1000));
+    
+    // Pick a random position from trader for realistic market data
+    const position = trader.positions && trader.positions.length > 0 
+      ? trader.positions[Math.floor(Math.random() * trader.positions.length)]
+      : null;
+      
+    const market = position ? position.market : `Sample Market ${Math.floor(Math.random() * 100)}`;
+    const slug = position ? position.slug : `sample-market-${i}`;
+    const currentPrice = position ? position.current_price : (Math.random() * 0.8 + 0.1);
+    
+    // Generate realistic trade size based on trader's typical volume
+    const avgPositionSize = trader.positions && trader.positions.length > 0
+      ? trader.positions.reduce((sum, p) => sum + (p.position_size || 0), 0) / trader.positions.length
+      : 1000;
+    const tradeSize = Math.round(avgPositionSize * (0.5 + Math.random() * 1.5));
+    
+    // Calculate expected P&L for the trade
+    const priceChange = (Math.random() - 0.5) * 0.2; // -10% to +10% price movement
+    const expectedPnl = tradeSize * priceChange;
+    
+    trades.push({
+      id: `trade_${i}_${Date.now()}`,
+      timestamp: tradeTime.toISOString(),
+      trader_pseudonym: trader.pseudonym,
+      trader_rank: allTraders.findIndex(t => t.pseudonym === trader.pseudonym) + 1,
+      trader_score: trader.score,
+      action: action,
+      market: market,
+      slug: slug,
+      outcome: outcome,
+      side: side,
+      price: currentPrice,
+      size: tradeSize,
+      expected_pnl: expectedPnl
+    });
+    
+    // Slightly adjust time for next trade
+    currentTime = new Date(currentTime.getTime() - (Math.random() * 30 * 60 * 1000)); // 0-30 min earlier
+  }
+  
+  // Sort by most recent first
+  return trades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
 // Netlify Function Handler
 exports.handler = async (event, context) => {
   const headers = {
@@ -360,6 +425,16 @@ exports.handler = async (event, context) => {
         statusCode: 200,
         headers,
         body: JSON.stringify(markets)
+      };
+    }
+    
+    if (path === '/trades') {
+      const limit = parseInt(params.get('limit')) || 50;
+      const trades = generateLatestTrades(allTraders, limit);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(trades)
       };
     }
     
