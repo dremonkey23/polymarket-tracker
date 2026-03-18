@@ -305,7 +305,9 @@ function generateLatestTrades(allTraders, limit = 50) {
       : null;
       
     const market = position ? position.market : `Sample Market ${Math.floor(Math.random() * 100)}`;
-    const slug = position ? position.slug : `sample-market-${i}`;
+    // Only use real slugs, otherwise set to null for fallback URL
+    const slug = (position && position.slug && !position.slug.includes('undefined')) ? position.slug : null;
+    const eventSlug = (position && position.eventSlug) ? position.eventSlug : null;
     const currentPrice = position ? position.current_price : (Math.random() * 0.8 + 0.1);
     
     // Generate realistic trade size based on trader's typical volume
@@ -327,6 +329,7 @@ function generateLatestTrades(allTraders, limit = 50) {
       action: action,
       market: market,
       slug: slug,
+      eventSlug: eventSlug,
       outcome: outcome,
       side: side,
       price: currentPrice,

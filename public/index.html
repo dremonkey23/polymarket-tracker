@@ -1388,7 +1388,19 @@
         const timeAgo = getTimeAgo(trade.timestamp);
         const actionBadge = getActionBadge(trade.action);
         const pnlClass = trade.expected_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
-        const polyUrl = trade.slug ? `https://polymarket.com/event/${trade.slug}` : '#';
+        
+        // Construct proper Polymarket URL
+        let polyUrl = '#';
+        if (trade.eventSlug) {
+          polyUrl = `https://polymarket.com/event/${trade.eventSlug}`;
+        } else if (trade.slug) {
+          polyUrl = `https://polymarket.com/event/${trade.slug}`;
+        } else {
+          // Fallback to search for the market name
+          const searchQuery = encodeURIComponent((trade.market || '').substring(0, 50));
+          polyUrl = `https://polymarket.com/markets?q=${searchQuery}`;
+        }
+        
         const marketShort = (trade.market || '').length > 40 ? trade.market.substring(0, 40) + '...' : trade.market;
 
         return `<tr class="trade-row">
@@ -1410,7 +1422,9 @@
             <span style="color: ${getScoreColor(trade.trader_score)}">${trade.trader_score || 0}</span>
           </td>
           <td>
-            <a href="${polyUrl}" target="_blank" class="copy-link" style="font-size: 11px;">View ↗</a>
+            <a href="${polyUrl}" target="_blank" class="copy-link" style="font-size: 11px;">
+              ${trade.eventSlug || trade.slug ? 'View ↗' : 'Search ↗'}
+            </a>
           </td>
         </tr>`;
       }).join('');
