@@ -805,6 +805,24 @@
         align-self: flex-end;
       }
     }
+
+    /* Latest Trades Styles */
+    .trade-row {
+      transition: all 0.2s;
+    }
+
+    .trade-row:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .trade-row td {
+      vertical-align: middle;
+    }
+
+    .trade-row .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
   </style>
 </head>
 <body>
@@ -863,6 +881,7 @@
       <button class="tab active" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆 Leaderboard</button>
       <button class="tab" data-tab="opportunities" onclick="switchTab('opportunities')">🎯 Opportunities</button>
       <button class="tab" data-tab="markets" onclick="switchTab('markets')">📊 Markets</button>
+      <button class="tab" data-tab="trades" onclick="switchTab('trades')">⚡ Latest Trades</button>
     </div>
 
     <!-- Tab Content -->
@@ -950,6 +969,36 @@
           <div class="loading"><div class="spinner"></div>Loading market analysis...</div>
         </div>
       </div>
+
+      <!-- Latest Trades Tab -->
+      <div id="tab-trades" class="tab-panel" style="display:none">
+        <div class="table-container">
+          <div class="table-header">
+            <div class="table-title">⚡ Latest Trades from Top Winners</div>
+            <span style="font-size:12px; color:var(--text-muted)">Real-time activity from elite traders</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Trader</th>
+                  <th>Action</th>
+                  <th>Market</th>
+                  <th>Outcome</th>
+                  <th>Price</th>
+                  <th>Size</th>
+                  <th>Score</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="tradesTable">
+                <tr><td colspan="9" class="loading"><div class="spinner"></div>Loading latest trades...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -964,6 +1013,7 @@
     let opportunities = [];
     let allOpportunities = [];
     let markets = [];
+    let latestTrades = [];
     let socket = null;
 
     // Initialize
@@ -1007,6 +1057,7 @@
         });
         socket.on('opportunities-update', (data) => { allOpportunities = data; opportunities = data; renderOpportunities(); });
         socket.on('markets-update', (data) => { markets = data; renderMarkets(); });
+        socket.on('trades-update', (data) => { latestTrades = data; renderTrades(); });
       } catch(e) {
         console.log('Socket.IO init failed, using HTTP polling only:', e.message);
         document.getElementById('wsStatus').className = 'status-dot disconnected';
@@ -1017,11 +1068,12 @@
     // Fetch all data
     async function fetchAll() {
       try {
-        const [statsRes, tradersRes, oppsRes, marketsRes] = await Promise.all([
+        const [statsRes, tradersRes, oppsRes, marketsRes, tradesRes] = await Promise.all([
           fetch('/api/stats'),
           fetch('/api/traders?limit=20'),
           fetch('/api/opportunities?limit=100'),
-          fetch('/api/markets')
+          fetch('/api/markets'),
+          fetch('/api/trades?limit=50')
         ]);
 
         const stats = await statsRes.json();
@@ -1032,11 +1084,13 @@
         allOpportunities = await oppsRes.json();
         opportunities = [...allOpportunities];
         markets = await marketsRes.json();
+        latestTrades = await tradesRes.json();
 
         updateStats(stats);
         renderTraders();
         renderOpportunities();
         renderMarkets();
+        renderTrades();
       } catch(e) {
         console.error('Fetch error:', e);
       }
@@ -1316,6 +1370,76 @@
           </div>
         </div>`;
       }).join('');
+    }
+
+    // Render latest trades
+    function renderTrades() {
+      const tbody = document.getElementById('tradesTable');
+      
+      if (!latestTrades || latestTrades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+          <h3>No recent trades</h3>
+          <p>Waiting for activity from top traders...</p>
+        </div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = latestTrades.map(trade => {
+        const timeAgo = getTimeAgo(trade.timestamp);
+        const actionBadge = getActionBadge(trade.action);
+        const pnlClass = trade.expected_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+        const polyUrl = trade.slug ? `https://polymarket.com/event/${trade.slug}` : '#';
+        const marketShort = (trade.market || '').length > 40 ? trade.market.substring(0, 40) + '...' : trade.market;
+
+        return `<tr class="trade-row">
+          <td class="mono" style="font-size: 11px;">${timeAgo}</td>
+          <td>
+            <strong>${escapeHtml(trade.trader_pseudonym || 'Unknown')}</strong>
+            <div style="font-size: 10px; color: var(--text-muted);">Rank #${trade.trader_rank || 'N/A'}</div>
+          </td>
+          <td>${actionBadge}</td>
+          <td title="${escapeHtml(trade.market || '')}" style="max-width: 200px;">
+            <div style="font-weight: 500;">${escapeHtml(marketShort)}</div>
+          </td>
+          <td>
+            <span class="badge badge-${trade.outcome === 'Yes' ? 'hot' : 'neutral'}">${escapeHtml(trade.outcome || '')} ${escapeHtml(trade.side || '')}</span>
+          </td>
+          <td class="mono">${formatPrice(trade.price)}</td>
+          <td class="mono">${formatCompact(trade.size)}</td>
+          <td>
+            <span style="color: ${getScoreColor(trade.trader_score)}">${trade.trader_score || 0}</span>
+          </td>
+          <td>
+            <a href="${polyUrl}" target="_blank" class="copy-link" style="font-size: 11px;">View ↗</a>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Get time ago string
+    function getTimeAgo(timestamp) {
+      if (!timestamp) return 'Unknown';
+      const now = new Date();
+      const tradeTime = new Date(timestamp);
+      const diffMs = now - tradeTime;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return tradeTime.toLocaleDateString();
+    }
+
+    // Get action badge
+    function getActionBadge(action) {
+      const badges = {
+        buy: '<span class="badge badge-hot">🟢 BUY</span>',
+        sell: '<span class="badge badge-cold">🔴 SELL</span>',
+        open: '<span class="badge badge-warm">🆕 OPEN</span>',
+        close: '<span class="badge badge-neutral">⚪ CLOSE</span>'
+      };
+      return badges[action] || badges.open;
     }
 
     // Tab switching
