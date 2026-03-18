@@ -981,7 +981,7 @@
             <table>
               <thead>
                 <tr>
-                  <th>Time</th>
+                  <th>Time ▼</th>
                   <th>Trader</th>
                   <th>Action</th>
                   <th>Market</th>
@@ -1384,7 +1384,10 @@
         return;
       }
 
-      tbody.innerHTML = latestTrades.map(trade => {
+      // Always sort trades by timestamp (newest first) before rendering
+      const sortedTrades = [...latestTrades].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      tbody.innerHTML = sortedTrades.map(trade => {
         const timeAgo = getTimeAgo(trade.timestamp);
         const actionBadge = getActionBadge(trade.action);
         const pnlClass = trade.expected_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
