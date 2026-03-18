@@ -915,24 +915,43 @@
       fetchAll();
     });
 
-    // Socket.io
+    // Socket.io (graceful fallback for serverless deployments)
     function connectSocket() {
-      socket = io();
-      
-      socket.on('connect', () => {
-        document.getElementById('wsStatus').className = 'status-dot';
-        document.getElementById('wsStatusText').textContent = 'Live';
-      });
+      try {
+        if (typeof io === 'undefined') {
+          console.log('Socket.IO not available, using HTTP polling only');
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+          return;
+        }
+        socket = io({ timeout: 5000, reconnectionAttempts: 3 });
+        
+        socket.on('connect', () => {
+          document.getElementById('wsStatus').className = 'status-dot';
+          document.getElementById('wsStatusText').textContent = 'Live';
+        });
 
-      socket.on('disconnect', () => {
+        socket.on('disconnect', () => {
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'Disconnected';
+        });
+
+        socket.on('connect_error', () => {
+          console.log('WebSocket unavailable, falling back to HTTP polling');
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+          socket.disconnect();
+        });
+
+        socket.on('stats-update', (data) => updateStats(data));
+        socket.on('traders-update', (data) => { traders = data; renderTraders(); });
+        socket.on('opportunities-update', (data) => { allOpportunities = data; opportunities = data; renderOpportunities(); });
+        socket.on('markets-update', (data) => { markets = data; renderMarkets(); });
+      } catch(e) {
+        console.log('Socket.IO init failed, using HTTP polling only:', e.message);
         document.getElementById('wsStatus').className = 'status-dot disconnected';
-        document.getElementById('wsStatusText').textContent = 'Disconnected';
-      });
-
-      socket.on('stats-update', (data) => updateStats(data));
-      socket.on('traders-update', (data) => { traders = data; renderTraders(); });
-      socket.on('opportunities-update', (data) => { allOpportunities = data; opportunities = data; renderOpportunities(); });
-      socket.on('markets-update', (data) => { markets = data; renderMarkets(); });
+        document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+      }
     }
 
     // Fetch all data

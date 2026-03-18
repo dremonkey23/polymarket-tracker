@@ -520,6 +520,234 @@
       outline: none;
       border-color: var(--blue);
     }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 800px;
+      max-height: 90vh;
+      width: 90%;
+      overflow: hidden;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-secondary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+      max-height: calc(90vh - 100px);
+      overflow-y: auto;
+    }
+
+    .trader-summary {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .summary-item {
+      text-align: center;
+    }
+
+    .summary-item .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .summary-item .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .positions-section h3 {
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .positions-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .position-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .position-card:hover {
+      border-color: var(--border-glow);
+    }
+
+    .position-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .position-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .position-pnl {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .position-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .trader-row:hover {
+      background: var(--bg-card-hover) !important;
+    }
+
+    /* Expandable trader positions */
+    .trader-positions {
+      background: var(--bg-secondary) !important;
+      border-top: none !important;
+    }
+
+    .positions-container {
+      padding: 16px 20px;
+      margin: 0;
+    }
+
+    .positions-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .position-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .position-item .market-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .position-item .outcome {
+      color: var(--text-secondary);
+    }
+
+    .position-item .price {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .position-item .pnl {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .position-item .trade-link {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .position-item .trade-link:hover {
+      color: var(--blue-dim);
+    }
+
+    .expand-icon {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      margin-right: 8px;
+      font-size: 10px;
+    }
+
+    .expand-icon.expanded {
+      transform: rotate(90deg);
+    }
+
+    @media (max-width: 768px) {
+      .position-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -668,6 +896,8 @@
     </div>
   </div>
 
+
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
@@ -685,24 +915,43 @@
       fetchAll();
     });
 
-    // Socket.io
+    // Socket.io (graceful fallback for serverless deployments)
     function connectSocket() {
-      socket = io();
-      
-      socket.on('connect', () => {
-        document.getElementById('wsStatus').className = 'status-dot';
-        document.getElementById('wsStatusText').textContent = 'Live';
-      });
+      try {
+        if (typeof io === 'undefined') {
+          console.log('Socket.IO not available, using HTTP polling only');
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+          return;
+        }
+        socket = io({ timeout: 5000, reconnectionAttempts: 3 });
+        
+        socket.on('connect', () => {
+          document.getElementById('wsStatus').className = 'status-dot';
+          document.getElementById('wsStatusText').textContent = 'Live';
+        });
 
-      socket.on('disconnect', () => {
+        socket.on('disconnect', () => {
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'Disconnected';
+        });
+
+        socket.on('connect_error', () => {
+          console.log('WebSocket unavailable, falling back to HTTP polling');
+          document.getElementById('wsStatus').className = 'status-dot disconnected';
+          document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+          socket.disconnect();
+        });
+
+        socket.on('stats-update', (data) => updateStats(data));
+        socket.on('traders-update', (data) => { traders = data; renderTraders(); });
+        socket.on('opportunities-update', (data) => { allOpportunities = data; opportunities = data; renderOpportunities(); });
+        socket.on('markets-update', (data) => { markets = data; renderMarkets(); });
+      } catch(e) {
+        console.log('Socket.IO init failed, using HTTP polling only:', e.message);
         document.getElementById('wsStatus').className = 'status-dot disconnected';
-        document.getElementById('wsStatusText').textContent = 'Disconnected';
-      });
-
-      socket.on('stats-update', (data) => updateStats(data));
-      socket.on('traders-update', (data) => { traders = data; renderTraders(); });
-      socket.on('opportunities-update', (data) => { allOpportunities = data; opportunities = data; renderOpportunities(); });
-      socket.on('markets-update', (data) => { markets = data; renderMarkets(); });
+        document.getElementById('wsStatusText').textContent = 'HTTP Mode';
+      }
     }
 
     // Fetch all data
@@ -768,14 +1017,15 @@
       pnlEl.className = 'stat-value ' + (stats.totalPnl >= 0 ? 'positive' : 'negative');
       
       document.getElementById('lastUpdate').textContent = 
-        stats.lastUpdate && stats.lastUpdate !== 'Never' 
-          ? 'Updated: ' + new Date(stats.lastUpdate).toLocaleTimeString() 
-          : '';
+        'Updated: ' + new Date().toLocaleTimeString();
     }
 
     // Render traders leaderboard
     function renderTraders() {
       const tbody = document.getElementById('tradersTable');
+      
+      // Clear expanded states on re-render
+      expandedTraders.clear();
       
       if (!traders || traders.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">
@@ -792,9 +1042,9 @@
         const trendBadge = getTrendBadge(t.trend);
         const pnlClass = t.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
 
-        return `<tr>
+        return `<tr class="trader-row" onclick="toggleTraderPositions(${i})" style="cursor: pointer;" title="Click to expand positions">
           <td><span class="rank ${rankClass}">${rank}</span></td>
-          <td><strong>${escapeHtml(t.pseudonym || 'Unknown')}</strong></td>
+          <td><strong><span class="expand-icon" id="icon-${i}">▶</span> ${escapeHtml(t.pseudonym || 'Unknown')}</strong></td>
           <td>
             <div class="score-bar-container">
               <span class="score-text" style="color:${scoreColor}">${Math.round(t.score)}</span>
@@ -810,6 +1060,16 @@
           <td class="mono hide-mobile">${(t.win_rate * 100).toFixed(0)}%</td>
           <td class="mono hide-mobile">${t.active_positions}</td>
           <td>${trendBadge}</td>
+        </tr>
+        <tr class="trader-positions" id="positions-${i}" style="display: none;">
+          <td colspan="10">
+            <div class="positions-container">
+              <h4 style="margin-bottom: 12px; color: var(--text-primary);">Open Positions for ${escapeHtml(t.pseudonym)}</h4>
+              <div class="positions-list" id="positions-list-${i}">
+                Loading positions...
+              </div>
+            </div>
+          </td>
         </tr>`;
       }).join('');
     }
@@ -1009,6 +1269,67 @@
       toast.textContent = message;
       toast.className = 'toast show ' + type;
       setTimeout(() => { toast.className = 'toast'; }, 4000);
+    }
+
+    // Trader expandable positions functions
+    let expandedTraders = new Set();
+
+    function toggleTraderPositions(traderIndex) {
+      const trader = traders[traderIndex];
+      if (!trader) return;
+
+      const positionsRow = document.getElementById(`positions-${traderIndex}`);
+      const icon = document.getElementById(`icon-${traderIndex}`);
+      const positionsList = document.getElementById(`positions-list-${traderIndex}`);
+      
+      if (expandedTraders.has(traderIndex)) {
+        // Collapse
+        positionsRow.style.display = 'none';
+        icon.className = 'expand-icon';
+        icon.textContent = '▶';
+        expandedTraders.delete(traderIndex);
+      } else {
+        // Expand
+        positionsRow.style.display = 'table-row';
+        icon.className = 'expand-icon expanded';
+        icon.textContent = '▼';
+        expandedTraders.add(traderIndex);
+
+        // Load positions
+        if (!trader.positions || trader.positions.length === 0) {
+          positionsList.innerHTML = '<div style="color: var(--text-muted); font-style: italic;">No open positions</div>';
+        } else {
+          positionsList.innerHTML = trader.positions.map(pos => {
+            const pnlClass = pos.pnl >= 0 ? 'positive' : 'negative';
+            const polyUrl = pos.slug ? `https://polymarket.com/event/${pos.eventSlug || pos.slug}` : '#';
+            const marketShort = (pos.market || '').length > 40 ? pos.market.substring(0, 40) + '...' : pos.market;
+            
+            return `
+              <div class="position-item">
+                <div class="market-name" title="${escapeHtml(pos.market || '')}">${escapeHtml(marketShort)}</div>
+                <div class="outcome">${escapeHtml(pos.outcome || 'N/A')} ${escapeHtml(pos.side || '')}</div>
+                <div class="price">${formatPrice(pos.current_price)}</div>
+                <div class="price">${formatPrice(pos.entry_price)}</div>
+                <div class="pnl ${pnlClass}">${formatCurrency(pos.pnl)}</div>
+                <div><a href="${polyUrl}" target="_blank" class="trade-link">Trade ↗</a></div>
+              </div>
+            `;
+          }).join('');
+
+          // Add header row
+          const headerRow = `
+            <div class="position-item" style="background: var(--bg-primary); border: none; font-weight: 600; color: var(--text-muted); font-size: 11px;">
+              <div>MARKET</div>
+              <div>OUTCOME</div>
+              <div>CURRENT</div>
+              <div>ENTRY</div>
+              <div>P&L</div>
+              <div>ACTION</div>
+            </div>
+          `;
+          positionsList.innerHTML = headerRow + positionsList.innerHTML;
+        }
+      }
     }
   </script>
 </body>
