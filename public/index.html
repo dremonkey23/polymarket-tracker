@@ -773,6 +773,38 @@
       color: var(--blue);
       opacity: 1;
     }
+
+    /* Profile Link Styles */
+    .profile-link {
+      background: var(--blue);
+      color: white;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .profile-link:hover {
+      background: var(--blue-dim);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      .positions-container > div:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      
+      .profile-link {
+        align-self: flex-end;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1095,7 +1127,12 @@
         <tr class="trader-positions" id="positions-${i}" style="display: none;">
           <td colspan="10">
             <div class="positions-container">
-              <h4 style="margin-bottom: 12px; color: var(--text-primary);">Open Positions for ${escapeHtml(t.pseudonym)}</h4>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <h4 style="margin: 0; color: var(--text-primary);">Open Positions for ${escapeHtml(t.pseudonym)}</h4>
+                <a href="https://polysights.xyz/trader/${encodeURIComponent(t.pseudonym)}" target="_blank" class="profile-link">
+                  👤 View Profile ↗
+                </a>
+              </div>
               <div class="positions-list" id="positions-list-${i}">
                 Loading positions...
               </div>
