@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/index.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     },
     {
@@ -13,22 +13,11 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server/index.js"
-    },
-    {
-      "src": "/",
-      "dest": "/public/index.html"
+      "dest": "/api/index.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "/public/index.html"
     }
-  ],
-  "env": {
-    "DEMO_MODE": "true",
-    "DB_PATH": "/tmp/polysights.db",
-    "PYTHON_PATH": "node",
-    "SCRAPER_PATH": "./server/scripts/sanitized-scraper.js",
-    "REFRESH_INTERVAL_MS": "900000"
-  }
+  ]
 }
