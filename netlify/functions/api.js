@@ -429,7 +429,8 @@ exports.handler = async (event, context) => {
     }
     
     if (path === '/trades') {
-      const limit = parseInt(params.get('limit')) || 50;
+      const qs = event.queryStringParameters || {};
+      const limit = parseInt(qs.limit) || 50;
       const trades = generateLatestTrades(allTraders, limit);
       return {
         statusCode: 200,
